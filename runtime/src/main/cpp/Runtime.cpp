@@ -16,6 +16,7 @@
 
 #include "Alloc.h"
 #include "Atomic.h"
+#include "Cleaner.h"
 #include "Exceptions.h"
 #include "KAssert.h"
 #include "Memory.h"
@@ -111,6 +112,11 @@ RuntimeState* initRuntime() {
 
 void deinitRuntime(RuntimeState* state) {
   ResumeMemory(state->memoryState);
+  // Perform full GC to run finalizers (Cleaners) before globals are deinitialized.
+  PerformFullGC(state->memoryState);
+  // And now disable cleaners for current thread. If there were cleaners in globals, this
+  // will terminate the program.
+  DisallowCleanersForCurrentThread();
   bool lastRuntime = atomicAdd(&aliveRuntimesCount, -1) == 0;
   InitOrDeinitGlobalVariables(DEINIT_THREAD_LOCAL_GLOBALS, state->memoryState);
   if (lastRuntime)

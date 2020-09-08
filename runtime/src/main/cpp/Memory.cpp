@@ -33,6 +33,7 @@
 #include "Alloc.h"
 #include "KAssert.h"
 #include "Atomic.h"
+#include "Cleaner.h"
 #if USE_CYCLIC_GC
 #include "CyclicCollector.h"
 #endif  // USE_CYCLIC_GC
@@ -1069,6 +1070,9 @@ ALWAYS_INLINE void runDeallocationHooks(ContainerHeader* container) {
   ObjHeader* obj = reinterpret_cast<ObjHeader*>(container + 1);
   for (uint32_t index = 0; index < container->objectCount(); index++) {
     auto* type_info = obj->type_info();
+    if (type_info == theCleanerImplTypeInfo) {
+        DisposeCleaner(obj);
+    }
     if (type_info == theWorkerBoundReferenceTypeInfo) {
       DisposeWorkerBoundReference(obj);
     }
@@ -3516,6 +3520,14 @@ void GC_CollectorCallback(void* worker) {
 #endif   // USE_CYCLIC_GC
 }
 
+void PerformFullGC(MemoryState* memory) {
+  garbageCollect(memory, true);
+}
+
+void PerformFullGCOnCurrentThread() {
+  garbageCollect(::memoryState, true);
+}
+
 KBoolean Kotlin_native_internal_GC_getCyclicCollector(KRef gc) {
 #if USE_CYCLIC_GC
   return g_hasCyclicCollector;
@@ -3531,6 +3543,10 @@ void Kotlin_native_internal_GC_setCyclicCollector(KRef gc, KBoolean value) {
   if (value)
     ThrowIllegalArgumentException();
 #endif  // USE_CYCLIC_GC
+}
+
+bool Kotlin_Any_isShareable(KRef thiz) {
+    return thiz == nullptr || isShareable(thiz->container());
 }
 
 } // extern "C"

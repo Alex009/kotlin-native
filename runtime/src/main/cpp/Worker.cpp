@@ -790,6 +790,10 @@ void* workerRoutine(void* argument) {
     if (worker->processQueueElement(true) == JOB_TERMINATE) break;
   } while (true);
 
+  // Perform full GC to run finalizers (Cleaners) before pthread TLS is zeroed out.
+  // TODO: This should also be done with external threads that had Kotlin runtime created on them.
+  PerformFullGCOnCurrentThread();
+
   // Runtime deinit callback could be called when TLS is already zeroed out, so clear memory
   // here explicitly. to make sure leak detector properly works.
   Kotlin_zeroOutTLSGlobals();

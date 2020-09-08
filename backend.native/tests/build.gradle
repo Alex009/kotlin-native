@@ -901,6 +901,33 @@ standaloneTest("worker_bound_reference0") {
     flags = ['-tr']
 }
 
+standaloneTest("cleaner0") {
+    source = "runtime/basic/cleaner0.kt"
+    flags = ['-tr']
+}
+
+standaloneTest("cleaner1") {
+    enabled = (project.testTarget != 'wasm32') // Workers need pthreads.
+    source = "runtime/basic/cleaner1.kt"
+    flags = ['-tr']
+}
+
+standaloneTest("cleaner2") {
+    source = "runtime/basic/cleaner2.kt"
+    goldValue = "42\n"
+}
+
+standaloneTest("cleaner3") {
+    source = "runtime/basic/cleaner3.kt"
+    goldValue = "42\n"
+}
+
+standaloneTest("cleaner4") {
+    source = "runtime/basic/cleaner4.kt"
+    expectedExitStatusChecker = { it != 0 }
+    outputChecker = { s -> (s =~ /Cleaner 0x[0-9a-fA-F]+ was stored in a global object/).find() }
+}
+
 task worker0(type: KonanLocalTest) {
     enabled = (project.testTarget != 'wasm32') // Workers need pthreads.
     goldValue = "Got Input processed\nOK\n"
