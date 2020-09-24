@@ -925,7 +925,7 @@ standaloneTest("cleaner3") {
 standaloneTest("cleaner4") {
     source = "runtime/basic/cleaner4.kt"
     expectedExitStatusChecker = { it != 0 }
-    outputChecker = { s -> (s =~ /Cleaner 0x[0-9a-fA-F]+ was stored in a global object/).find() }
+    outputChecker = { s -> (s =~ /Cleaner (0x)?[0-9a-fA-F]+ was stored in a global object/).find() }
 }
 
 task worker0(type: KonanLocalTest) {
