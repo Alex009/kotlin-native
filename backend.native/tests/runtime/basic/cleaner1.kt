@@ -48,7 +48,7 @@ fun testCleanerDestroyInChild() {
 
     GC.collect()
     worker.requestTermination().result
-    GC.collect()
+    performGCOnCleanerWorker().result
 
     assertNull(cleanerWeak!!.value)
     assertTrue(called.value)
@@ -76,7 +76,7 @@ fun testCleanerDestroyFrozenInChild() {
 
     GC.collect()
     worker.requestTermination().result
-    GC.collect()
+    performGCOnCleanerWorker().result
 
     assertNull(cleanerWeak!!.value)
     assertTrue(called.value)
@@ -104,7 +104,7 @@ fun testCleanerDestroyInMain() {
 
     GC.collect()
     worker.requestTermination().result
-    GC.collect()
+    performGCOnCleanerWorker().result
 
     assertNull(cleanerWeak!!.value)
     assertTrue(called.value)
@@ -132,7 +132,7 @@ fun testCleanerDestroyFrozenInMain() {
 
     GC.collect()
     worker.requestTermination().result
-    GC.collect()
+    performGCOnCleanerWorker().result
 
     assertNull(cleanerWeak!!.value)
     assertTrue(called.value)

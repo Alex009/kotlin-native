@@ -12,10 +12,11 @@ extern "C" void Kotlin_CleanerImpl_clean(KRef thiz);
 
 namespace {
 
-THREAD_LOCAL_VARIABLE bool allowedCleaners = true;
+bool allowedCleaners = true;
+bool cleanerWorkerActive = false;
 
 void disposeCleaner(KRef thiz) {
-    if (!allowedCleaners) {
+    if (!atomicGet(&allowedCleaners)) {
         konan::consoleErrorf("Cleaner %p was stored in a global object. This is not allowed\n", thiz);
         RuntimeCheck(false, "Terminating now");
     }
@@ -38,6 +39,14 @@ RUNTIME_NOTHROW void DisposeCleaner(KRef thiz) {
 #endif
 }
 
-RUNTIME_NOTHROW void DisallowCleanersForCurrentThread() {
-  allowedCleaners = false;
+RUNTIME_NOTHROW void DisallowCleaners() {
+  atomicSet(&allowedCleaners, false);
+}
+
+RUNTIME_NOTHROW bool CleanerWorkerActive() {
+    return atomicGet(&cleanerWorkerActive);
+}
+
+extern "C" void Kotlin_CleanerImpl_MarkCleanerWorkerActive() {
+    atomicSet(&cleanerWorkerActive, true);
 }

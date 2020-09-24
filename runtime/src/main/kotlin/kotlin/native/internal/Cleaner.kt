@@ -5,11 +5,31 @@
 
 package kotlin.native.internal
 
+import kotlin.native.concurrent.Future
+import kotlin.native.concurrent.Worker
+import kotlin.native.concurrent.TransferMode
 import kotlin.native.concurrent.freeze
 import kotlinx.cinterop.StableRef
 import kotlinx.cinterop.asStableRef
 
 public interface Cleaner
+
+@SymbolName("Kotlin_CleanerImpl_MarkCleanerWorkerActive")
+external private fun markCleanerWorkerActive()
+
+@SharedImmutable
+private val cleanerWorker = {
+    val worker = Worker.start(errorReporting = false, name = "Cleaner pool")
+    // Make sure worker is up and running.
+    worker.execute(TransferMode.SAFE, {}) {}.result
+    markCleanerWorkerActive();
+    worker
+}()
+
+@ExportForCppRuntime("Kotlin_CleanerImpl_shutdownCleanerWorker")
+private fun shutdownCleanerWorker() {
+    cleanerWorker.requestTermination().result
+}
 
 @ExportTypeInfo("theCleanerImplTypeInfo")
 private class CleanerImpl<T>(
@@ -17,14 +37,21 @@ private class CleanerImpl<T>(
     private val cleanObj: (T) -> Unit,
 ): Cleaner {
 
-    private val objHolder = StableRef.create(obj as Any).asCPointer()
+    init {
+        // Make sure that Cleaner Worker is initialized.
+        cleanerWorker
+    }
+
+    private val objHolder = StableRef.create(obj as Any)
 
     @ExportForCppRuntime("Kotlin_CleanerImpl_clean")
     private fun clean() {
-        val ref = objHolder.asStableRef<Any>()
-        @Suppress("UNCHECKED_CAST")
-        cleanObj(ref.get() as T)
-        ref.dispose()
+        val cleanPackage = Pair(cleanObj, objHolder).freeze()
+        cleanerWorker.execute(TransferMode.SAFE, { cleanPackage }) { (cleanObj, objHolder) ->
+            @Suppress("UNCHECKED_CAST")
+            cleanObj(objHolder.get() as T)
+            objHolder.dispose()
+        }
     }
 }
 
@@ -45,3 +72,8 @@ private fun <T> createCleanerImpl(argument: T, block: (T) -> Unit): Cleaner {
  */
 @TypedIntrinsic(IntrinsicType.CREATE_CLEANER)
 external fun <T> createCleaner(argument: T, block: (T) -> Unit): Cleaner
+
+fun performGCOnCleanerWorker(): Future<Unit> =
+    cleanerWorker.execute(TransferMode.SAFE, {}) {
+        GC.collect()
+    }

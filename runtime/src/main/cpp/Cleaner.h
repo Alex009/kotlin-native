@@ -13,6 +13,8 @@
 // all types.
 RUNTIME_NOTHROW void DisposeCleaner(KRef thiz) NO_INLINE;
 
-RUNTIME_NOTHROW void DisallowCleanersForCurrentThread();
+RUNTIME_NOTHROW void DisallowCleaners();
+
+RUNTIME_NOTHROW bool CleanerWorkerActive();
 
 #endif // RUNTIME_CLEANER_H

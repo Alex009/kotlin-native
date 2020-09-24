@@ -3521,10 +3521,6 @@ void PerformFullGC(MemoryState* memory) {
   garbageCollect(memory, true);
 }
 
-void PerformFullGCOnCurrentThread() {
-  garbageCollect(::memoryState, true);
-}
-
 KBoolean Kotlin_native_internal_GC_getCyclicCollector(KRef gc) {
 #if USE_CYCLIC_GC
   return g_hasCyclicCollector;

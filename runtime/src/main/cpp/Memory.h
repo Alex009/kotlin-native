@@ -559,7 +559,6 @@ void GC_UnregisterWorker(void* worker) RUNTIME_NOTHROW;
 void GC_CollectorCallback(void* worker) RUNTIME_NOTHROW;
 
 void PerformFullGC(MemoryState* memory);
-void PerformFullGCOnCurrentThread();
 
 #ifdef __cplusplus
 }
