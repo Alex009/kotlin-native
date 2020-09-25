@@ -33,7 +33,7 @@ import org.jetbrains.kotlin.UtilsKt
 // See also:
 // https://github.com/gradle/kotlin-dsl-samples/issues/607
 // https://github.com/gradle/gradle/issues/4823
-project(':third_party:googletest').evaluationDependsOn(":third_party")
+//project(':third_party:googletest').evaluationDependsOn(":third_party")
 
 buildscript {
     apply from: "gradle/kotlinGradlePlugin.gradle"
@@ -775,8 +775,8 @@ task pusher(type: KotlinBuildPusher){
 targetList.each { target ->
     CompilationDatabaseKt.mergeCompilationDatabases(project, "${target}CompilationDatabase".toString(), [
             ":common:${target}CompilationDatabase".toString(),
-            ":runtime:${target}CompilationDatabase".toString(),
-            ":third_party:googletest:${target}CompilationDatabase".toString()
+            ":runtime:${target}CompilationDatabase".toString()//,
+            //":third_party:googletest:${target}CompilationDatabase".toString()
     ]).configure {
         outputFile = file("$buildDir/${target}/compile_commands.json")
     }

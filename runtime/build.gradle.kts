@@ -3,17 +3,22 @@
  * that can be found in the LICENSE file.
  */
 import org.jetbrains.kotlin.*
+import org.jetbrains.kotlin.testing.native.*
 import org.jetbrains.kotlin.bitcode.CompileToBitcode
 
 plugins {
     id("compile-to-bitcode")
+    id("runtime-testing")
+}
+
+googletest {
+    repository = "https://github.com/ilmat192/googletest"
+    //revision = "v1.10.x"
+    revision = "master"
 }
 
 fun CompileToBitcode.includeRuntime() {
-    headersDirs += listOf(
-            file("../common/src/hash/headers"),
-            file("src/main/cpp")
-    )
+    headersDirs += files("../common/src/hash/headers", "src/main/cpp")
 }
 
 val hostName: String by project
@@ -43,9 +48,9 @@ bitcode {
         language = CompileToBitcode.Language.C
         includeFiles = listOf("**/*.c")
         excludeFiles += listOf("**/alloc-override*.c", "**/page-queue.c", "**/static.c")
-        srcDir = File(srcRoot, "c")
+        srcDirs = files("$srcRoot/c")
         compilerArgs.add("-DKONAN_MI_MALLOC=1")
-        headersDirs = listOf(File(srcDir, "include"))
+        headersDirs = files("$srcRoot/c/include")
 
         onlyIf { targetSupportsMimallocAllocator(target) }
     }
@@ -61,7 +66,7 @@ bitcode {
     create("std_alloc")
     create("opt_alloc")
 
-    create("exceptionsSupport", file("src/exceptions_support")) { // TODO: Fix naming?
+    create("exceptionsSupport", file("src/exceptions_support")) {
         includeRuntime()
     }
 
@@ -77,7 +82,7 @@ bitcode {
         includeRuntime()
     }
 
-    create("profileRuntime", file("src/profile_runtime")) // TODO: Fix naming?
+    create("profileRuntime", file("src/profile_runtime"))
 
     create("objc") {
         includeRuntime()

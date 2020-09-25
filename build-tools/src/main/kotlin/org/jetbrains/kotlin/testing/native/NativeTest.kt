@@ -3,15 +3,15 @@
  * that can be found in the LICENSE file.
  */
 
-package org.jetbrains.kotlin
+package org.jetbrains.kotlin.testing.native
 
-import groovy.lang.Closure
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.*
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.*
 import org.gradle.nativeplatform.test.tasks.RunTestExecutable
+import org.jetbrains.kotlin.ExecClang
 import org.jetbrains.kotlin.bitcode.CompileToBitcode
 import org.jetbrains.kotlin.konan.target.*
 
@@ -179,8 +179,8 @@ fun createTestTask(
             task
     }
     val testFrameworkTasks = listOf(
-        project.tasks.getByPath(":third_party:googletest:${target}Googletest") as CompileToBitcode,
-        project.tasks.getByPath(":third_party:googletest:${target}Googlemock") as CompileToBitcode
+        project.tasks.getByName("${target}Googletest") as CompileToBitcode,
+        project.tasks.getByName("${target}Googlemock") as CompileToBitcode
     )
 
     val testSupportTask = project.tasks.getByName("${target}TestSupport") as CompileToBitcode
