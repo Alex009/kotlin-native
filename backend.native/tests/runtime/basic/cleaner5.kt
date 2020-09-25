@@ -4,8 +4,10 @@
  */
 
 import kotlin.native.internal.*
+import kotlin.native.Platform
 
 fun main() {
+    Platform.isCleanersLeakCheckerActive = true
     // This will not get executed at all: after exiting `main` cleaners get disabled before GC is run to claim
     // this cleaner.
     createCleaner(42) {

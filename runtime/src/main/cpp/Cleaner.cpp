@@ -6,24 +6,29 @@
 #include "Cleaner.h"
 
 #include "Memory.h"
+#include "Runtime.h"
 
 // Defined in Cleaner.kt
 extern "C" void Kotlin_CleanerImpl_clean(KRef thiz);
+extern "C" void Kotlin_CleanerImpl_shutdownCleanerWorker();
 
 namespace {
 
-bool allowedCleaners = true;
-bool cleanerWorkerActive = false;
+bool cleanersDisabled = false;
 
 void disposeCleaner(KRef thiz) {
-    if (!atomicGet(&allowedCleaners)) {
-        konan::consoleErrorf("Cleaner %p was stored in a global object. This is not allowed\n", thiz);
+    if (atomicGet(&cleanersDisabled)) {
+      if (Kotlin_cleanersLeakCheckerEnabled()) {
+        konan::consoleErrorf("Cleaner %p was disposed after main()\n", thiz);
         RuntimeCheck(false, "Terminating now");
+      }
+      return;
     }
+
     Kotlin_CleanerImpl_clean(thiz);
 }
 
-}  // namespace
+}
 
 RUNTIME_NOTHROW void DisposeCleaner(KRef thiz) {
 #if KONAN_NO_EXCEPTIONS
@@ -39,14 +44,7 @@ RUNTIME_NOTHROW void DisposeCleaner(KRef thiz) {
 #endif
 }
 
-RUNTIME_NOTHROW void DisallowCleaners() {
-  atomicSet(&allowedCleaners, false);
-}
-
-RUNTIME_NOTHROW bool CleanerWorkerActive() {
-    return atomicGet(&cleanerWorkerActive);
-}
-
-extern "C" void Kotlin_CleanerImpl_MarkCleanerWorkerActive() {
-    atomicSet(&cleanerWorkerActive, true);
+void ShutdownCleaners() {
+    atomicSet(&cleanersDisabled, true);
+    Kotlin_CleanerImpl_shutdownCleanerWorker();
 }

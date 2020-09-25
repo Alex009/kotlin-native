@@ -3,22 +3,14 @@
  * that can be found in the LICENSE file.
  */
 
-import kotlin.test.*
-
 import kotlin.native.internal.*
-import kotlin.native.concurrent.*
-
-val globalInt1 = AtomicInt(11)
-val globalInt2 = AtomicInt(30)
-
-// TODO: This is actually a bad case: if no one reads this global,
-// cleaner will never be created.
-val globalCleaner = createCleaner(globalInt2) {
-    println(it.value + globalInt1.value)
-}
+import kotlin.native.Platform
 
 fun main() {
-    globalInt1.value = 12
-    // Make sure cleaner is initialized.
-    assertNotNull(globalCleaner)
+    Platform.isCleanersLeakCheckerActive = false
+    // This will not get executed at all: after exiting `main` cleaners get disabled before GC is run to claim
+    // this cleaner.
+    createCleaner(42) {
+        println(it)
+    }
 }

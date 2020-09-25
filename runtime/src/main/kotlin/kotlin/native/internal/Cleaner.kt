@@ -5,29 +5,25 @@
 
 package kotlin.native.internal
 
-import kotlin.native.concurrent.Future
-import kotlin.native.concurrent.Worker
-import kotlin.native.concurrent.TransferMode
-import kotlin.native.concurrent.freeze
+import kotlin.native.concurrent.*
 import kotlinx.cinterop.StableRef
 import kotlinx.cinterop.asStableRef
 
 public interface Cleaner
-
-@SymbolName("Kotlin_CleanerImpl_MarkCleanerWorkerActive")
-external private fun markCleanerWorkerActive()
 
 @SharedImmutable
 private val cleanerWorker = {
     val worker = Worker.start(errorReporting = false, name = "Cleaner pool")
     // Make sure worker is up and running.
     worker.execute(TransferMode.SAFE, {}) {}.result
-    markCleanerWorkerActive();
     worker
 }()
 
+private val cleanerWorkerIsStopped = AtomicInt(0)
+
 @ExportForCppRuntime("Kotlin_CleanerImpl_shutdownCleanerWorker")
 private fun shutdownCleanerWorker() {
+    cleanerWorkerIsStopped.value = 1
     cleanerWorker.requestTermination().result
 }
 
@@ -46,6 +42,9 @@ private class CleanerImpl<T>(
 
     @ExportForCppRuntime("Kotlin_CleanerImpl_clean")
     private fun clean() {
+        if (cleanerWorkerIsStopped.value != 0)
+            return
+
         val cleanPackage = Pair(cleanObj, objHolder).freeze()
         cleanerWorker.execute(TransferMode.SAFE, { cleanPackage }) { (cleanObj, objHolder) ->
             @Suppress("UNCHECKED_CAST")

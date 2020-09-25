@@ -37,9 +37,6 @@ struct InitNode {
   InitNode* next;
 };
 
-// Defined in Cleaner.kt
-extern "C" void Kotlin_CleanerImpl_shutdownCleanerWorker();
-
 namespace {
 
 InitNode* initHeadNode = nullptr;
@@ -79,6 +76,7 @@ void InitOrDeinitGlobalVariables(int initialize, MemoryState* memory) {
 }
 
 KBoolean g_checkLeaks = KonanNeedDebugInfo;
+KBoolean g_checkLeakedCleaners = KonanNeedDebugInfo;
 
 constexpr RuntimeState* kInvalidRuntime = nullptr;
 
@@ -115,17 +113,7 @@ RuntimeState* initRuntime() {
 
 void deinitRuntime(RuntimeState* state) {
   ResumeMemory(state->memoryState);
-  auto runtimeCount = atomicAdd(&aliveRuntimesCount, -1);
-  if (runtimeCount == 1 && CleanerWorkerActive()) {
-    // Perform full GC to schedule the last Cleaners.
-    PerformFullGC(state->memoryState);
-    // Now wait for the cleaner thread to shut down.
-    Kotlin_CleanerImpl_shutdownCleanerWorker();
-    // And now disable Cleaners. If there were Cleaners in globals, their
-    // deallocation will terminate the program.
-    DisallowCleaners();
-  }
-  bool lastRuntime = runtimeCount == 0;
+  bool lastRuntime = atomicAdd(&aliveRuntimesCount, -1) == 0;
   InitOrDeinitGlobalVariables(DEINIT_THREAD_LOCAL_GLOBALS, state->memoryState);
   if (lastRuntime)
     InitOrDeinitGlobalVariables(DEINIT_GLOBALS, state->memoryState);
@@ -296,6 +284,18 @@ KBoolean Konan_Platform_getMemoryLeakChecker() {
 
 void Konan_Platform_setMemoryLeakChecker(KBoolean value) {
   g_checkLeaks = value;
+}
+
+bool Kotlin_cleanersLeakCheckerEnabled() {
+  return g_checkLeakedCleaners;
+}
+
+KBoolean Konan_Platform_getCleanersLeakCheckers() {
+  return g_checkLeakedCleaners;
+}
+
+void Konan_Platform_setCleanersLeakChecker(KBoolean value) {
+  g_checkLeakedCleaners = value;
 }
 
 }  // extern "C"

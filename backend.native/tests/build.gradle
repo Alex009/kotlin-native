@@ -912,20 +912,43 @@ standaloneTest("cleaner1") {
     flags = ['-tr']
 }
 
-standaloneTest("cleaner2") {
+standaloneTest("cleaner2_release") {
+    enabled = !project.globalTestArgs.contains('-g')
     source = "runtime/basic/cleaner2.kt"
-    goldValue = "42\n"
+    goldValue = ""
 }
 
-standaloneTest("cleaner3") {
+standaloneTest("cleaner2_debug") {
+    enabled = !project.globalTestArgs.contains('-opt')
+    source = "runtime/basic/cleaner2.kt"
+    flags = ['-g']
+    expectedExitStatusChecker = { it != 0 }
+    outputChecker = { s -> (s =~ /Cleaner (0x)?[0-9a-fA-F]+ was disposed after main()/).find() }
+}
+
+standaloneTest("cleaner3_release") {
+    enabled = !project.globalTestArgs.contains('-g')
     source = "runtime/basic/cleaner3.kt"
-    goldValue = "42\n"
+    goldValue = ""
+}
+
+standaloneTest("cleaner3_debug") {
+    enabled = !project.globalTestArgs.contains('-opt')
+    source = "runtime/basic/cleaner3.kt"
+    flags = ['-g']
+    expectedExitStatusChecker = { it != 0 }
+    outputChecker = { s -> (s =~ /Cleaner (0x)?[0-9a-fA-F]+ was disposed after main()/).find() }
 }
 
 standaloneTest("cleaner4") {
     source = "runtime/basic/cleaner4.kt"
+    goldValue = ""
+}
+
+standaloneTest("cleaner5") {
+    source = "runtime/basic/cleaner5.kt"
     expectedExitStatusChecker = { it != 0 }
-    outputChecker = { s -> (s =~ /Cleaner (0x)?[0-9a-fA-F]+ was stored in a global object/).find() }
+    outputChecker = { s -> (s =~ /Cleaner (0x)?[0-9a-fA-F]+ was disposed after main()/).find() }
 }
 
 task worker0(type: KonanLocalTest) {

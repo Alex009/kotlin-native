@@ -14,6 +14,7 @@
   * limitations under the License.
   */
 
+#include "Cleaner.h"
 #include "Memory.h"
 #include "Natives.h"
 #include "Runtime.h"
@@ -57,6 +58,7 @@ extern "C" RUNTIME_USED int Init_and_run_start(int argc, const char** argv, int 
   KInt exitStatus = Konan_run_start(argc, argv);
 
   if (memoryDeInit) {
+    ShutdownCleaners();
     if (Kotlin_memoryLeakCheckerEnabled())
       WaitNativeWorkersTermination();
     Kotlin_deinitRuntimeIfNeeded();
