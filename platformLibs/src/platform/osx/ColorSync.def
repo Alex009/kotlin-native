@@ -1,0 +1,6 @@
+depends = CoreFoundation darwin posix
+language = Objective-C
+package = platform.ColorSync
+modules = ColorSync
+compilerOpts = -framework ColorSync
+linkerOpts = -framework ColorSync

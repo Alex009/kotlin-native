@@ -1,4 +1,4 @@
-depends = CFNetwork CoreFoundation CoreGraphics CoreServices CoreText DiskArbitration IOKit ImageIO Security darwin libkern osx posix
+depends = CFNetwork ColorSync CoreFoundation CoreGraphics CoreServices CoreText DiskArbitration IOKit ImageIO Security darwin libkern osx posix
 language = Objective-C
 package = platform.ApplicationServices
 modules = ApplicationServices ColorSync
